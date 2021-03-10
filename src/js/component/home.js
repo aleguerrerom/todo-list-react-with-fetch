@@ -1,40 +1,116 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 //include images into your bundle
-let requestOptions = {
-	method: "GET",
-	redirect: "follow"
-};
 
-const response = await fetch(
-	"https://assets.breatheco.de/apis/fake/todos/user/aleguerrerom",
-	requestOptions
-).catch(error => console.log("error", error));
-
-console.log(GET());
 export function Home() {
+	const [Searched, setSearched] = useState(false);
 	const [inputValue, fnInputValue] = useState("");
-	const [addtoArray, fnAddtoArray] = useState(response);
+	const [addtoArray, fnAddtoArray] = useState([]);
+	const [list, setList] = useState([]);
+
+	///buscar TODOs
+	SearchTodoList();
+	async function SearchTodoList() {
+		//console.log(inputSearch);
+
+		var requestOptions = {
+			method: "GET",
+			redirect: "follow"
+		};
+
+		const response = await fetch(
+			"https://assets.breatheco.de/apis/fake/todos/user/aleguerrerom",
+			requestOptions
+		)
+			.then(res => {
+				return res.json();
+			})
+			.catch(error => console.log("error", error));
+//aagit ad
+		setList(response);
+		setSearched(true);
+		console.log(response);
+	}
+	////Actualizar todos
+	async function UpdateTodo(newarray) {
+		console.log(newarray);
+		var myHeaders = new Headers();
+		myHeaders.append("Content-Type", "application/json");
+
+		var raw = JSON.stringify(newarray);
+
+		var requestOptions = {
+			method: "PUT",
+			headers: myHeaders,
+			body: raw,
+			redirect: "follow"
+		};
+
+		const response = await fetch(
+			"https://assets.breatheco.de/apis/fake/todos/user/aleguerrerom",
+			requestOptions
+		)
+			.then(res => {
+				if (res.status == 200) {
+					SearchTodoList();
+				}
+			})
+			.catch(error => console.log("error", error));
+	}
+	///ELIMIAR TO DOS
+	async function DeleteTodo() {
+		var requestOptions = {
+			method: "DELETE",
+			redirect: "follow"
+		};
+
+		const response = await fetch(
+			"https://assets.breatheco.de/apis/fake/todos/user/aleguerrerom",
+			requestOptions
+		)
+			.then(res => {
+				if (res.status == 200) {
+					setSearched(false);
+					fnInputValue("");
+					return res;
+				}
+			})
+			.catch(error => console.log("error", error));
+
+		fnInputValue("");
+		console.log(response);
+	}
+
+	///Anadir TODOS
 	const addTodo = e => {
 		if (e.key == "Enter") {
-			if (inputValue !== "") {
-				const todosnew = addtoArray.concat(inputValue);
-				fnAddtoArray(todosnew);
-				fnInputValue("");
-			} else alert("");
+			const todosnew = list.concat({
+				label: inputValue,
+				done: false
+			});
+			UpdateTodo(todosnew);
+			fnInputValue("");
 		}
 	};
+
+	///ELIMINAR TODOS
 	function removeTodo(task) {
 		const todosnew = addtoArray.filter(item => item !== task);
-		fnAddtoArray(todosnew);
+		if (todosnew.length == 0) {
+			DeleteTodo();
+		} else {
+			fnAddtoArray(todosnew);
+		}
 	}
+
+	//COMPONENETE TODO
 	const TodoList = () => {
 		return (
 			<div>
 				<ul>
-					{addtoArray.map(item => (
-						<li className="lista" key={item}>
-							{item}
+					{list.map((item, id) => (
+						<li className="lista" key={id}>
+							{item.label}
 
 							<i
 								id="right"
@@ -43,7 +119,7 @@ export function Home() {
 						</li>
 					))}
 				</ul>
-				<p>{addtoArray.length} item left</p>
+				<p>{list.length} item left</p>
 			</div>
 		);
 	};
