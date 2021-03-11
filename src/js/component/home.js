@@ -3,18 +3,24 @@ import React, { useState, useEffect } from "react";
 //include images into your bundle
 
 export function Home() {
-	const [Searched, setSearched] = useState(false);
 	const [inputValue, fnInputValue] = useState("");
 	const [addtoArray, fnAddtoArray] = useState([]);
 	const [list, setList] = useState([]);
 
-	///buscar TODOs
-	SearchTodoList();
-	async function SearchTodoList() {
-		//console.log(inputSearch);
+	/// USE EFFEECT PARA LLAMAR SOLO UNA VEZ EL SEARCH
+	useEffect(() => {
+		BuscarTodoList();
+	}, []);
 
-		var requestOptions = {
-			method: "GET",
+	async function CrearArray() {
+		let myHeaders = new Headers();
+		myHeaders.append("Content-Type", "application/json");
+
+		let raw = JSON.stringify([]);
+		let requestOptions = {
+			method: "POST",
+			headers: myHeaders,
+			body: raw,
 			redirect: "follow"
 		};
 
@@ -23,16 +29,37 @@ export function Home() {
 			requestOptions
 		)
 			.then(res => {
-				return res.json();
+				if (res.status == 200) {
+					BuscarTodoList();
+				}
+			})
+			.then(result => console.log(result))
+			.catch(error => console.log("error", error));
+	}
+	///buscar TODOs
+	async function BuscarTodoList() {
+		let requestOptions = {
+			method: "GET"
+		};
+
+		const response = await fetch(
+			"https://assets.breatheco.de/apis/fake/todos/user/aleguerrerom",
+			requestOptions
+		)
+			.then(res => {
+				if (res.status == 404) {
+					CrearArray();
+				} else {
+					return res.json();
+				}
 			})
 			.catch(error => console.log("error", error));
-//aagit ad
+		//aagit ad
 		setList(response);
-		setSearched(true);
 		console.log(response);
 	}
 	////Actualizar todos
-	async function UpdateTodo(newarray) {
+	async function ActualizarTodo(newarray) {
 		console.log(newarray);
 		var myHeaders = new Headers();
 		myHeaders.append("Content-Type", "application/json");
@@ -52,7 +79,7 @@ export function Home() {
 		)
 			.then(res => {
 				if (res.status == 200) {
-					SearchTodoList();
+					BuscarTodoList();
 				}
 			})
 			.catch(error => console.log("error", error));
@@ -70,15 +97,12 @@ export function Home() {
 		)
 			.then(res => {
 				if (res.status == 200) {
-					setSearched(false);
 					fnInputValue("");
 					return res;
 				}
 			})
 			.catch(error => console.log("error", error));
-
 		fnInputValue("");
-		console.log(response);
 	}
 
 	///Anadir TODOS
@@ -88,18 +112,18 @@ export function Home() {
 				label: inputValue,
 				done: false
 			});
-			UpdateTodo(todosnew);
+			ActualizarTodo(todosnew);
 			fnInputValue("");
 		}
 	};
 
 	///ELIMINAR TODOS
-	function removeTodo(task) {
-		const todosnew = addtoArray.filter(item => item !== task);
+	function quitarTodo(task) {
+		const todosnew = list.filter(item => item !== task);
 		if (todosnew.length == 0) {
 			DeleteTodo();
 		} else {
-			fnAddtoArray(todosnew);
+			ActualizarTodo(todosnew);
 		}
 	}
 
@@ -111,11 +135,10 @@ export function Home() {
 					{list.map((item, id) => (
 						<li className="lista" key={id}>
 							{item.label}
-
 							<i
 								id="right"
 								className="fas fa-trash-alt"
-								onClick={() => removeTodo(item)}></i>
+								onClick={() => quitarTodo(item)}></i>
 						</li>
 					))}
 				</ul>
@@ -127,7 +150,7 @@ export function Home() {
 	return (
 		<div className="card">
 			<h1>todos</h1>
-			<div className="cartita">
+			<div className="cartita ">
 				<input
 					type="text"
 					placeholder="What do you need?"
@@ -135,6 +158,14 @@ export function Home() {
 					onChange={e => fnInputValue(e.target.value)}
 					onKeyUp={addTodo}></input>
 				<TodoList />
+				<div className="text-center">
+					<button
+						type="button"
+						className="btn btn-secondary"
+						onClick={() => DeleteTodo()}>
+						DELETE
+					</button>
+				</div>
 			</div>
 		</div>
 	);
